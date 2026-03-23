@@ -2,10 +2,14 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import type { CSSProperties } from "react";
 import "./App.css";
 import heroPhoto from "./assets/hero.png";
+import { SKILL_GROUPS } from "./constants/skills";
+import { ROLES } from "./constants/roles";
+import { AWARDS } from "./constants/awards";
+import { CP_HANDLES } from "./constants/cp-handles";
+import { EXTRAS } from "./constants/extra-curricular";
+import { useTypewriter } from "./features/hooks/useTypeWrite";
+import { useCounter } from "./features/hooks/useCounter";
 
-/* ============================================================
-   DATA
-   ============================================================ */
 const NAV_LINKS = [
   { label: "About", href: "#about" },
   { label: "Skills", href: "#skills" },
@@ -17,219 +21,6 @@ const NAV_LINKS = [
   { label: "Contact", href: "#contact" },
 ];
 
-const ROLES = [
-  "Full Stack Developer",
-  "Problem Solver",
-];
-
-const SKILL_GROUPS = [
-  {
-    icon: "⚡",
-    color: "cyan" as const,
-    title: "Languages",
-    items: ["C", "C++", "JavaScript", "TypeScript", "SQL"],
-  },
-  {
-    icon: "🖥️",
-    color: "emerald" as const,
-    title: "Frontend",
-    items: ["React.js", "Next.js", "HTML5", "CSS3", "Tailwind CSS", "Bootstrap", "MUI", "DaisyUI", "HeroUI"],
-  },
-  {
-    icon: "🔧",
-    color: "purple" as const,
-    title: "Backend & Databases",
-    items: ["Node.js", "Express.js", "RESTful APIs", "PHP (Laravel)", "MongoDB", "PostgreSQL"],
-  },
-  {
-    icon: "🛠️",
-    color: "orange" as const,
-    title: "Tools & Concepts",
-    items: ["Redux", "Zustand", "TanStack Query", "Context API", "Git", "GitHub", "Figma", "Vercel", "Firebase", "OOP", "SOLID"],
-  },
-];
-
-const CP_HANDLES = [
-  { platform: "Codeforces", id: "K_A_Akhi_", url: "https://codeforces.com/profile/K_A_Akhi_", color: "#ff6b6b" },
-  { platform: "UVA", id: "Akhi55", url: "#", color: "#ffd93d" },
-  { platform: "AtCoder", id: "K_A_Akhi_", url: "https://atcoder.jp/users/K_A_Akhi_", color: "#6bcb77" },
-  { platform: "CodeChef", id: "k_a_akhi", url: "https://www.codechef.com/users/k_a_akhi", color: "#ff9f52" },
-  { platform: "LeetCode", id: "kohinooraktherakhi5539", url: "https://leetcode.com/kohinooraktherakhi5539", color: "#b57bff" },
-];
-
-const AWARDS = [
-  {
-    icon: "🥈",
-    title: "Runner-Up, Learnathon 3.0",
-    sub: "Brain Station 23 PLC · May 2025 · Team: Elite Programmers",
-    glow: "rgba(36,209,255,0.2)",
-  },
-  {
-    icon: "🚀",
-    title: "NASA Space App Challenge 2024",
-    sub: "Hackathon Participant · Team: Team_CosmoQuest",
-    glow: "rgba(181,123,255,0.2)",
-  },
-  {
-    icon: "🏆",
-    title: "Champion, IIUC Intra University Contest",
-    sub: "Autumn 2023 · Team: IIUC_RackedTrio",
-    glow: "rgba(255,159,82,0.2)",
-  },
-  {
-    icon: "👩‍💻",
-    title: "6th National Girls Programming Contest 2022",
-    sub: "Team: IIUC_Racked Trio",
-    glow: "rgba(31,245,160,0.2)",
-  },
-  {
-    icon: "🥇",
-    title: "Top Performer, IIUC Competitive Programming Bootcamp",
-    sub: "Spring 2021",
-    glow: "rgba(255,217,61,0.2)",
-  },
-  {
-    icon: "✍️",
-    title: "5th Place, 15th August IIUC Essay Competition",
-    sub: "2021",
-    glow: "rgba(255,109,174,0.2)",
-  },
-];
-
-const EXTRAS = [
-  { role: "Teaching Assistant", org: "IIUC", period: "2022 – 2023", note: "Course: C, C++, Computer Graphics", icon: "📚" },
-  { role: "Asst. General Secretary", org: "IIUC Computer Club", period: "2023 – 2024", note: "Organized events and workshops", icon: "🎯" },
-  { role: "Asst. Sports Secretary", org: "IIUC Computer Club", period: "2022 – 2023", note: "Led sports events for club members", icon: "🏅" },
-];
-
-/* ============================================================
-   CANVAS PARTICLE HOOK
-   ============================================================ */
-function useParticleCanvas(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let w = (canvas.width = window.innerWidth);
-    let h = (canvas.height = window.innerHeight);
-    let raf: number;
-
-    const onResize = () => {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
-    };
-    window.addEventListener("resize", onResize);
-
-    interface Star { x: number; y: number; r: number; vx: number; vy: number; alpha: number; }
-    const COUNT = Math.min(Math.floor((w * h) / 8000), 160);
-    const stars: Star[] = Array.from({ length: COUNT }, () => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      r: Math.random() * 1.4 + 0.3,
-      vx: (Math.random() - 0.5) * 0.22,
-      vy: (Math.random() - 0.5) * 0.22,
-      alpha: Math.random() * 0.6 + 0.2,
-    }));
-
-    const CONNECT = 130;
-
-    function draw() {
-      ctx!.clearRect(0, 0, w, h);
-      for (let i = 0; i < stars.length; i++) {
-        const s = stars[i];
-        s.x += s.vx;
-        s.y += s.vy;
-        if (s.x < 0) s.x = w;
-        if (s.x > w) s.x = 0;
-        if (s.y < 0) s.y = h;
-        if (s.y > h) s.y = 0;
-
-        ctx!.beginPath();
-        ctx!.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(100,200,255,${s.alpha})`;
-        ctx!.fill();
-
-        for (let j = i + 1; j < stars.length; j++) {
-          const t = stars[j];
-          const dx = s.x - t.x;
-          const dy = s.y - t.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < CONNECT) {
-            const opacity = (1 - dist / CONNECT) * 0.22;
-            ctx!.beginPath();
-            ctx!.moveTo(s.x, s.y);
-            ctx!.lineTo(t.x, t.y);
-            ctx!.strokeStyle = `rgba(36,209,255,${opacity})`;
-            ctx!.lineWidth = 0.6;
-            ctx!.stroke();
-          }
-        }
-      }
-      raf = requestAnimationFrame(draw);
-    }
-    draw();
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [canvasRef]);
-}
-
-/* ============================================================
-   TYPEWRITER HOOK
-   ============================================================ */
-function useTypewriter(words: string[], speed = 80, pause = 1800) {
-  const [text, setText] = useState("");
-  const [wordIdx, setWordIdx] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const current = words[wordIdx % words.length];
-    const timeout = setTimeout(() => {
-      if (!isDeleting) {
-        setText(current.substring(0, text.length + 1));
-        if (text.length + 1 === current.length) {
-          setTimeout(() => setIsDeleting(true), pause);
-        }
-      } else {
-        setText(current.substring(0, text.length - 1));
-        if (text.length === 0) {
-          setIsDeleting(false);
-          setWordIdx((prev) => prev + 1);
-        }
-      }
-    }, isDeleting ? speed / 2 : speed);
-    return () => clearTimeout(timeout);
-  }, [text, isDeleting, wordIdx, words, speed, pause]);
-
-  return text;
-}
-
-/* ============================================================
-   ANIMATED COUNTER HOOK
-   ============================================================ */
-function useCounter(target: number, duration = 1600, trigger: boolean) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!trigger) return;
-    let start = 0;
-    const step = target / (duration / 16);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= target) { setCount(target); clearInterval(timer); }
-      else setCount(Math.floor(start));
-    }, 16);
-    return () => clearInterval(timer);
-  }, [trigger, target, duration]);
-  return count;
-}
-
-/* ============================================================
-   APP
-   ============================================================ */
 export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const [scrollPct, setScrollPct] = useState(0);
@@ -240,13 +31,10 @@ export default function App() {
 
   const typedRole = useTypewriter(ROLES);
 
-  useParticleCanvas(canvasRef);
-
   const count1 = useCounter(1000, 1800, cpVisible);
   const count2 = useCounter(5, 1000, cpVisible);
   const count3 = useCounter(6, 1200, cpVisible);
 
-  /* Scroll progress & navbar */
   useEffect(() => {
     const onScroll = () => {
       const scrolled = window.scrollY;
@@ -259,7 +47,6 @@ export default function App() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  /* Scroll reveal */
   useEffect(() => {
     const targets = Array.from(
       document.querySelectorAll<HTMLElement>(".reveal, .reveal-left, .reveal-right")
@@ -280,7 +67,6 @@ export default function App() {
     return () => observerRef.current?.disconnect();
   }, []);
 
-  /* CP section counter trigger */
   useEffect(() => {
     const el = cpRef.current;
     if (!el) return;
@@ -292,7 +78,6 @@ export default function App() {
     return () => obs.disconnect();
   }, []);
 
-  /* Tilt card effect */
   const handleTilt = useCallback((e: React.MouseEvent<HTMLElement>) => {
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
@@ -307,11 +92,7 @@ export default function App() {
 
   return (
     <div className="portfolio-app">
-      {/* Scroll progress bar */}
       <div className="scroll-progress" style={{ "--pct": `${scrollPct}%` } as CSSProperties} />
-
-      {/* Canvas particle background */}
-      <canvas ref={canvasRef} className="particle-canvas" aria-hidden="true" />
 
       {/* Animated background orbs */}
       <div className="bg-canvas" aria-hidden="true">
@@ -322,7 +103,6 @@ export default function App() {
       </div>
       <div className="grid-overlay" aria-hidden="true" />
 
-      {/* ── NAVBAR ── */}
       <header className={`navbar${scrolled ? " scrolled" : ""}`}>
         <div className="navbar-inner">
           <a href="#home" className="brand">
@@ -343,16 +123,8 @@ export default function App() {
       </header>
 
       <main>
-        {/* ── HERO ── */}
-       <section id="home" className="hero hero-centered">
+        <section id="home" className="hero hero-centered">
           <div className="hero-bg-image" aria-hidden="true" />
-
-          {/* Aurora beams */}
-          <div className="aurora" aria-hidden="true">
-            <div className="aurora-beam aurora-beam-1" />
-            <div className="aurora-beam aurora-beam-2" />
-            <div className="aurora-beam aurora-beam-3" />
-          </div>
 
           <div className="hero-content hero-content-centered">
             <div className="hero-left">
@@ -362,7 +134,6 @@ export default function App() {
                 <span className="name-line2">Akther Akhi</span>
               </h1>
 
-              {/* Typewriter role */}
               <p className="hero-role-typed reveal" style={{ "--delay": "160ms" } as CSSProperties}>
                 <span className="role-static">I am a </span>
                 <span className="role-typed">{typedRole}</span>
@@ -385,7 +156,6 @@ export default function App() {
         </section>
 
 
-        {/* ── ABOUT ── */}
         <section id="about" className="section">
           <div className="container">
             <div className="section-header">
@@ -425,7 +195,6 @@ export default function App() {
 
         <div className="section-divider" />
 
-        {/* ── SKILLS ── */}
         <section id="skills" className="section">
           <div className="container">
             <div className="section-header">
@@ -465,7 +234,6 @@ export default function App() {
 
         <div className="section-divider" />
 
-        {/* ── EXPERIENCE ── */}
         <section id="experience" className="section">
           <div className="container">
             <div className="section-header">
@@ -510,7 +278,6 @@ export default function App() {
 
         <div className="section-divider" />
 
-        {/* ── PROJECTS ── */}
         <section id="projects" className="section">
           <div className="container">
             <div className="section-header">
@@ -561,7 +328,6 @@ export default function App() {
 
         <div className="section-divider" />
 
-        {/* ── AWARDS ── */}
         <section id="awards" className="section">
           <div className="container">
             <div className="section-header">
@@ -593,7 +359,6 @@ export default function App() {
 
         <div className="section-divider" />
 
-        {/* ── COMPETITIVE PROGRAMMING ── */}
         <section id="competitive" className="section">
           <div className="container" ref={cpRef}>
             <div className="section-header">
@@ -606,7 +371,6 @@ export default function App() {
               </p>
             </div>
 
-            {/* Animated stats */}
             <div className="cp-snapshot-row">
               {[
                 { value: count1, suffix: "+", label: "Problems Solved", cls: "c", delay: 0 },
@@ -629,7 +393,6 @@ export default function App() {
             <div className="cp-section-grid">
               <div className="cp-left">
 
-                {/* Handles Table */}
                 <div className="cp-handles-table reveal-left" style={{ "--delay": "120ms" } as CSSProperties}>
                   <div className="cp-handles-header">
                     <span>Platform</span>
@@ -669,7 +432,6 @@ export default function App() {
 
         <div className="section-divider" />
 
-        {/* ── EDUCATION ── */}
         <section id="education" className="section">
           <div className="container">
             <div className="section-header">
@@ -696,7 +458,6 @@ export default function App() {
 
         <div className="section-divider" />
 
-        {/* ── EXTRACURRICULAR ── */}
         <section id="extra" className="section">
           <div className="container">
             <div className="section-header">
@@ -728,7 +489,6 @@ export default function App() {
 
         <div className="section-divider" />
 
-        {/* ── CONTACT ── */}
         <section id="contact" className="contact-section">
           <div className="container">
             <div className="contact-inner">
