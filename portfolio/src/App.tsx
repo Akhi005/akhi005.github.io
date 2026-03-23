@@ -612,7 +612,7 @@ export default function App() {
                 { value: count1, suffix: "+", label: "Problems Solved", cls: "c", delay: 0 },
                 { value: count2, suffix: "", label: "Online Judges", cls: "p", delay: 100 },
                 { value: count3, suffix: "+", label: "Awards & Recognitions", cls: "o", delay: 200 },
-              ].map((s, i) => (
+              ].map((s) => (
                 <div
                   key={s.label}
                   className="cp-snap-item reveal"
